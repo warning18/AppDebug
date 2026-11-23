@@ -2,43 +2,49 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Firebase Events Live</title>
 <style>
-:root{--bg:#fff;--fg:#1c1e21;--mut:#6b7280;--card:#f3f4f6;--bd:#d1d5db;--ac:#2563eb}
-@media(prefers-color-scheme:dark){:root{--bg:#111318;--fg:#e5e7eb;--mut:#9ca3af;--card:#1b1f27;--bd:#2d333f;--ac:#60a5fa}}
+:root{--bg:#f6f7f9;--pn:#fff;--fg:#1c1e21;--mut:#6b7280;--card:#f3f4f6;--bd:#d9dde3;--ac:#2563eb;--ev:#0e7490}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1015;--pn:#161a21;--fg:#e5e7eb;--mut:#9ca3af;--card:#1b1f27;--bd:#2a303b;--ac:#60a5fa;--ev:#22d3ee}}
 *{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif;background:var(--bg);color:var(--fg);height:100vh;display:flex;flex-direction:column}
-header{padding:10px 14px;border-bottom:1px solid var(--bd);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-input,select,button{font:inherit;padding:6px 9px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--fg)}
-button{cursor:pointer;background:var(--card)}button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+header{padding:10px 14px;background:var(--pn);border-bottom:1px solid var(--bd);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input,select,button{font:inherit;padding:6px 9px;border:1px solid var(--bd);border-radius:6px;background:var(--pn);color:var(--fg)}
+button{cursor:pointer}button.p{background:var(--ac);color:#fff;border-color:var(--ac)}button.r{background:#dc2626;color:#fff;border-color:#dc2626}
 main{flex:1;display:flex;min-height:0}
-#phone{width:340px;padding:12px;border-right:1px solid var(--bd);display:flex;flex-direction:column;align-items:center;gap:8px}
-#phone img{max-width:100%;max-height:calc(100vh - 150px);border:6px solid #222;border-radius:22px;background:#000}
+#phone{width:310px;padding:12px;background:var(--pn);border-right:1px solid var(--bd);display:flex;flex-direction:column;align-items:center;gap:8px}
+#phone img{max-width:100%;max-height:calc(100vh - 130px);border:6px solid #222;border-radius:22px;background:#000}
 #ev{flex:1;display:flex;flex-direction:column;min-width:0}
-#tools{padding:8px 12px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--bd)}
-#list{flex:1;overflow:auto;padding:8px 12px}
-.e{border:1px solid var(--bd);border-radius:8px;margin-bottom:6px;background:var(--card)}
-.e>div:first-child{padding:7px 10px;cursor:pointer;display:flex;gap:10px;align-items:baseline}
-.n{font-weight:600}.t{color:var(--mut);font-size:12px}.u{color:var(--ac);font-size:12px}
-table{width:100%;border-collapse:collapse;display:none}.e.o table{display:table}
-td{padding:3px 10px;border-top:1px solid var(--bd);font:12px ui-monospace,monospace;word-break:break-all}td:first-child{color:var(--mut);width:35%}
-dialog{border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--fg);max-width:480px}
-small{color:var(--mut)}#msg{color:#dc2626}
-@media(max-width:700px){main{flex-direction:column}#phone{width:100%;border:0}}
+#tools{padding:8px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--pn);border-bottom:1px solid var(--bd)}
+#list{flex:1;overflow:auto;padding:12px}
+.b{display:flex;gap:14px;background:var(--pn);border:1px solid var(--bd);border-radius:10px;margin-bottom:12px;padding:10px}
+.b.cur{border-style:dashed}
+.shot{flex:0 0 190px}.shot img{width:100%;border-radius:8px;border:1px solid var(--bd);cursor:zoom-in}
+.shot .none{height:120px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--mut);font-size:12px;border:1px dashed var(--bd);border-radius:8px;padding:6px}
+.bd{flex:1;min-width:0}.bh{display:flex;gap:10px;align-items:center;margin-bottom:6px;color:var(--mut);font-size:12px}.bh b{color:var(--fg);font-size:13px}
+.e{margin-bottom:8px}.n{color:var(--ev);font-weight:600;font-family:ui-monospace,Consolas,monospace}.t{color:var(--mut);font-size:12px;margin-right:8px;font-family:ui-monospace,monospace}
+table{border-collapse:collapse;margin:3px 0 0 14px}td{padding:1px 14px 1px 0;font:12.5px ui-monospace,Consolas,monospace;word-break:break-all;vertical-align:top}td:first-child{color:var(--mut);white-space:nowrap}
+.flat .e{background:var(--pn);border:1px solid var(--bd);border-radius:8px;padding:8px 10px}
+dialog{border:1px solid var(--bd);border-radius:10px;background:var(--pn);color:var(--fg);max-width:480px}
+#zoom{max-width:96vw;max-height:96vh;padding:6px}#zoom img{max-width:92vw;max-height:90vh}
+small{color:var(--mut)}#msg{color:#dc2626}label{display:flex;gap:4px;align-items:center;white-space:nowrap}
+@media(max-width:800px){main{flex-direction:column}#phone{width:100%;border:0}.b{flex-direction:column}.shot{flex:none;max-width:220px}}
 </style></head><body>
 <header>
  <select id="dev"></select><button id="rf" title="Refresh devices">⟳</button>
- <button id="wifi">Connect over Wi-Fi…</button>
- <input id="pkg" list="pkgs" placeholder="Target package (com.example.app)" size="30"><datalist id="pkgs"></datalist>
- <button class="p" id="go">Start capture</button><button id="stop" hidden>Stop</button>
+ <button id="wifi">Wi-Fi…</button>
+ <input id="pkg" list="pkgs" placeholder="Target package (com.example.app)" size="28"><datalist id="pkgs"></datalist>
+ <select id="mode" title="Batches = what Firebase uploads (screenshot per batch). Instant = event as soon as it is logged."><option value="batch">Batches + screenshots</option><option value="instant">Instant events</option></select>
+ <button class="p" id="go">Start capture</button><button class="r" id="stop" hidden>Stop &amp; save</button>
  <span id="msg"></span>
 </header>
 <main>
  <aside id="phone"><img id="scr" alt="Device screen" hidden><small id="hint">Pick a device to mirror its screen.</small></aside>
  <section id="ev">
-  <div id="tools"><input id="q" placeholder="Filter events or parameters…" size="26">
-   <label><input type="checkbox" id="hideAuto"> hide auto events</label>
+  <div id="tools"><input id="q" placeholder="Filter events or parameters…" size="24">
+   <label><input type="checkbox" id="hideSys"> hide system params</label>
+   <label><input type="checkbox" id="flat"> flat list</label>
    <label><input type="checkbox" id="pause"> pause</label>
    <span style="flex:1"></span><small id="cnt">0 events</small>
-   <button id="clr">Clear</button><button id="exj">JSON</button><button id="exc">CSV</button></div>
-  <div id="list"><small>Choose a device and a package, then press “Start capture”. Use the app: events appear here live.</small></div>
+   <button id="clr">Clear</button><button id="exc">CSV</button><button id="exj">JSON</button></div>
+  <div id="list"></div>
  </section>
 </main>
 <dialog id="dlg"><form method="dialog">
@@ -47,39 +53,78 @@ small{color:var(--mut)}#msg{color:#dc2626}
  <p><b>1.</b> “Pair device with pairing code”:<br><input id="pa" placeholder="ip:port" size="18"> <input id="pc" placeholder="6-digit code" size="10"> <button type="button" id="pair">Pair</button></p>
  <p><b>2.</b> Main Wireless debugging screen (ip:port):<br><input id="ca" placeholder="ip:port" size="18"> <button type="button" id="conn">Connect</button></p>
  <p id="dm"></p><button>Close</button></form></dialog>
+<dialog id="zoom"><form method="dialog"><img id="zi" alt=""></form></dialog>
 <script>
-const $=id=>document.getElementById(id);let events=[],serial='',running=false;
+const $=id=>document.getElementById(id);
+const SYS=/^(_dbg|_o|_e_id|_et|_r|_s|_si|_sn|firebase_event_origin|firebase_previous_class|firebase_previous_id|firebase_previous_screen|firebase_screen|firebase_screen_class|firebase_screen_id|ga_.*|engagement_time_msec)$/;
+let evs=new Map(),batches=[],pending=[],serial='',mode='batch',dir='';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const api=async(p,b)=>{const r=await fetch('/api/'+p,b?{method:'POST',body:JSON.stringify(b)}:{});const j=await r.json();if(j.error)throw new Error(j.error);return j};
-const msg=t=>{$('msg').textContent=t||''};
+const msg=(t,info)=>{$('msg').textContent=t||'';$('msg').style.color=info?'var(--mut)':''};
+// ---- devices
 async function devices(){try{const d=await api('devices');const ok=d.filter(x=>x.state==='device');
- $('dev').innerHTML=ok.length?ok.map(x=>`<option value="${x.serial}">${x.model||x.serial} (${x.serial})</option>`).join(''):'<option value="">No device</option>';
+ $('dev').innerHTML=ok.length?ok.map(x=>`<option value="${esc(x.serial)}">${esc(x.model||x.serial)} (${esc(x.serial)})</option>`).join(''):'<option value="">No device</option>';
  serial=$('dev').value;msg(d.some(x=>x.state==='unauthorized')?'Accept the USB debugging prompt on the phone.':'');if(serial)pkgs()}catch(e){msg('adb not found or failed: '+e.message)}}
-async function pkgs(){serial=$('dev').value;if(!serial)return;try{const p=await api('packages?serial='+encodeURIComponent(serial));$('pkgs').innerHTML=p.map(x=>`<option value="${x}">`).join('')}catch(e){msg(e.message)}}
+async function pkgs(){serial=$('dev').value;if(!serial)return;try{const p=await api('packages?serial='+encodeURIComponent(serial));$('pkgs').innerHTML=p.map(x=>`<option value="${esc(x)}">`).join('');try{const l=localStorage.pkg;if(l&&!$('pkg').value)$('pkg').value=l}catch{}}catch(e){msg(e.message)}}
 $('dev').onchange=pkgs;$('rf').onclick=devices;
-$('go').onclick=async()=>{try{msg('');await api('start',{serial:$('dev').value,pkg:$('pkg').value.trim()})}catch(e){msg(e.message)}};
+$('go').onclick=async()=>{try{msg('');try{localStorage.pkg=$('pkg').value.trim()}catch{}
+ evs=new Map();batches=[];pending=[];await api('start',{serial:$('dev').value,pkg:$('pkg').value.trim(),mode:$('mode').value})}catch(e){msg(e.message)}};
 $('stop').onclick=()=>api('stop',{});
 $('wifi').onclick=()=>$('dlg').showModal();
 $('pair').onclick=async()=>{try{$('dm').textContent=(await api('pair',{addr:$('pa').value,code:$('pc').value})).out}catch(e){$('dm').textContent=e.message}};
 $('conn').onclick=async()=>{try{$('dm').textContent=(await api('connect',{addr:$('ca').value})).out;devices()}catch(e){$('dm').textContent=e.message}};
-// screen loop
+// ---- live mirror
 async function loop(){const s=$('dev').value;if(s){const img=$('scr');const u=await new Promise(r=>{const i=new Image();i.onload=()=>r(i.src);i.onerror=()=>r(null);i.src='/api/screen?serial='+encodeURIComponent(s)+'&t='+Date.now()});
  if(u){img.src=u;img.hidden=false;$('hint').hidden=true}}setTimeout(loop,s?250:1500)}
-// events
-function view(){const q=$('q').value.toLowerCase(),h=$('hideAuto').checked;
- const f=events.filter(e=>!(h&&/^_|^(screen_view|user_engagement|session_start|first_open|app_)/.test(e.name))&&(!q||(e.name+JSON.stringify(e.params)).toLowerCase().includes(q)));
- $('cnt').textContent=f.length+' events';
- const open=new Set([...document.querySelectorAll('.e.o')].map(x=>x.dataset.id));
- $('list').innerHTML=f.slice().reverse().map(e=>`<div class="e${open.has(''+e.id)?' o':''}" data-id="${e.id}"><div><span class="t">${e.time.slice(6)}</span><span class="n">${esc(e.name)}</span>${e.kind==='user_property'?'<span class="u">user property</span>':''}<span class="t">${Object.keys(e.params).length} params</span></div><table>${Object.entries(e.params).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table></div>`).join('')||'<small>No events yet.</small>'}
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-$('list').onclick=e=>{const d=e.target.closest('.e');if(d)d.classList.toggle('o')};
-['q','hideAuto'].forEach(i=>$(i).oninput=view);
-$('clr').onclick=()=>{events=[];api('clear',{});view()};
+// ---- screenshots: crop to app window, compose side-by-side
+const loadImg=u=>new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=u});
+async function cropShot(b){const img=await loadImg('/shots/'+b.shot+'?t='+Date.now());const bd=b.bounds||{full:true};
+ const x=bd.full?0:Math.max(0,Math.min(bd.x,img.width-1)),y=bd.full?0:Math.max(0,Math.min(bd.y,img.height-1));
+ const w=bd.full?img.width:Math.min(bd.w,img.width-x),h=bd.full?img.height:Math.min(bd.h,img.height-y);
+ const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,x,y,w,h,0,0,w,h);return c}
+function evsOf(b){return b.eventIds.map(i=>evs.get(i)).filter(Boolean)}
+function sideBySide(b){const src=b.crop,w=src.width,h=src.height,pw=Math.max(1050,Math.round(w*.95)),fs=Math.max(16,Math.round(h/72)),lh=Math.round(fs*1.45),pad=28;
+ const c=document.createElement('canvas');c.width=w+pw;c.height=h;const g=c.getContext('2d');g.drawImage(src,0,0);
+ g.fillStyle='#10131a';g.fillRect(w,0,pw,h);g.textBaseline='top';
+ const T=(t,f,col,x,y)=>{g.font=f;g.fillStyle='rgba(0,0,0,.85)';g.fillText(t,x+2,y+2);g.fillStyle=col;g.fillText(t,x,y)};
+ const hide=$('hideSys').checked,list=evsOf(b);let y=pad;
+ T(`FIREBASE QA INSPECTOR (${list.length} events)${hide?' [Filtered]':''}`,`bold ${fs}px Consolas,monospace`,'#c0c0c0',w+pad,y);y+=lh*1.5;
+ for(const e of list){if(y+lh>h-pad)break;T(`[${e.time}] ${e.name}`,`bold ${fs}px Consolas,monospace`,'#22d3ee',w+pad,y);y+=lh;
+  for(const[k,v]of Object.entries(e.params)){if(hide&&SYS.test(k))continue;if(y+lh>h-pad)break;T(`  ${k} : ${v}`,`${fs}px Consolas,monospace`,'#fff',w+pad,y);y+=lh}y+=Math.round(lh*.5)}
+ return c}
+const up=(name,c)=>c.toBlob(bl=>fetch('/api/save?name='+encodeURIComponent(name),{method:'POST',body:bl}),'image/png');
+async function prepare(b){if(!b.shot||b.crop||b.loading)return;b.loading=true;try{b.crop=await cropShot(b);b.thumb=b.crop.toDataURL('image/jpeg',.8);
+ up(b.id+'.png',b.crop);up(b.id+'_sidebyside.png',sideBySide(b))}catch{}b.loading=false;view()}
+// ---- rendering
+function evHtml(e,q,hide){const ps=Object.entries(e.params).filter(([k,v])=>!(hide&&SYS.test(k)));
+ return`<div class="e"><span class="t">${esc(e.time)}</span><span class="n">${esc(e.name)}</span>${e.kind==='user_property'?' <small>user property</small>':''}${ps.length?`<table>${ps.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table>`:''}</div>`}
+function view(){const q=$('q').value.toLowerCase(),hide=$('hideSys').checked,flat=$('flat').checked||mode==='instant';
+ const ok=e=>!q||(e.name+JSON.stringify(e.params)).toLowerCase().includes(q);
+ $('cnt').textContent=evs.size+' events'+(mode==='batch'?` · ${batches.length} batches`:'');
+ let h='';
+ if(flat){h=`<div class="flat">${[...evs.values()].filter(ok).reverse().map(e=>evHtml(e,q,hide)).join('')}</div>`}
+ else{const card=(b,cur)=>{const list=(cur?pending.map(i=>evs.get(i)).filter(Boolean):evsOf(b)).filter(ok);if(!list.length)return'';
+  const shot=cur?'<div class="none">Waiting for batch upload…</div>':b.thumb?`<img src="${b.thumb}" data-b="${esc(b.id)}" alt="screenshot">`:`<div class="none">${b.shot?'Loading…':esc(b.skipped||'No screenshot')}</div>`;
+  return`<div class="b${cur?' cur':''}"><div class="shot">${shot}</div><div class="bd"><div class="bh"><b>${cur?'Current batch':'Batch '+esc(b.time)}</b><span>${list.length} events</span>${!cur&&b.crop?`<button data-dl="${esc(b.id)}">⬇ side-by-side PNG</button>`:''}</div>${list.map(e=>evHtml(e,q,hide)).join('')}</div></div>`};
+  h=card(null,true)+batches.slice().reverse().map(b=>card(b,false)).join('')}
+ $('list').innerHTML=h||'<small>Choose a device and a package, then press “Start capture”. Use the app: events appear here as Firebase uploads them.</small>'}
+$('list').onclick=e=>{const i=e.target.closest('img[data-b]');if(i){const b=batches.find(x=>x.id===i.dataset.b);if(b&&b.crop){$('zi').src=sideBySide(b).toDataURL();$('zoom').showModal()}}
+ const d=e.target.closest('button[data-dl]');if(d){const b=batches.find(x=>x.id===d.dataset.dl);const a=document.createElement('a');a.href=sideBySide(b).toDataURL();a.download=b.id+'_sidebyside.png';a.click()}};
+['q','hideSys','flat'].forEach(i=>$(i).oninput=view);
+$('clr').onclick=()=>{evs=new Map();batches=[];pending=[];api('clear',{});view()};
 const dl=(n,t,m)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:m}));a.download=n;a.click()};
-$('exj').onclick=()=>dl('events.json',JSON.stringify(events,null,2),'application/json');
-$('exc').onclick=()=>{const q=s=>'"'+String(s).replace(/"/g,'""')+'"';dl('events.csv','time,event,param,value\n'+events.flatMap(e=>Object.keys(e.params).length?Object.entries(e.params).map(([k,v])=>[e.time,e.name,k,v].map(q).join(',')):[[e.time,e.name,'',''].map(q).join(',')]).join('\n'),'text/csv')};
+$('exj').onclick=()=>dl('events.json',JSON.stringify([...evs.values()],null,2),'application/json');
+$('exc').onclick=()=>{location.href='/api/csv'};
+// ---- stream
 const es=new EventSource('/api/stream');
 es.onmessage=m=>{const d=JSON.parse(m.data);
- if(d.type==='event'){if(!$('pause').checked){events.push(d.event);view()}}
- else{running=d.running;$('go').hidden=running;$('stop').hidden=!running;if(d.error)msg(d.error)}};
-devices();loop();
+ if(d.type==='event'){if($('pause').checked)return;evs.set(d.event.id,d.event);if(mode==='batch')pending.push(d.event.id);view()}
+ else if(d.type==='batch'||d.type==='batch-update'){const b=d.batch||d;const old=batches.find(x=>x.id===b.id);const ids=b.eventIds;
+  pending=pending.filter(i=>!ids.includes(i));
+  if(old){Object.assign(old,{shot:b.shot,bounds:b.bounds});b.skipped=old.skipped}else batches.push(b);
+  const t=old||b;if(d.type==='batch-update'&&!b.shot)t.skipped='Skipped (app not in foreground)';
+  prepare(t);view()}
+ else if(d.type==='status'){mode=d.mode||mode;if(d.mode)$('mode').value=d.mode;$('go').hidden=!!d.running;$('stop').hidden=!d.running;
+  if(d.dir){dir=d.dir;msg(d.running?'Saving to '+d.dir:'Saved in '+d.dir,true)}if(d.error)msg(d.error);view()}};
+devices();loop();view();
 </script></body></html>

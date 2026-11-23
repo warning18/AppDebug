@@ -29,3 +29,42 @@ function parseLine(line) {
 }
 
 module.exports = { parseLine, parseBundle };
+
+// ---- FA-SVC batch parser (multi-line "event { name: ... param { ... } }" dumps) ----
+const SVC_LINES = [
+  /^\d\d-\d\d\s+(\d\d:\d\d:\d\d\.\d+)\s+[A-Z]\/FA-SVC\s*\(\s*\d+\):\s*(.*)$/,   // -v time
+  /^\d\d-\d\d\s+(\d\d:\d\d:\d\d\.\d+)\s+\d+\s+\d+\s+[A-Z]\s+FA-SVC\s*:\s*(.*)$/, // -v threadtime
+];
+const unq = (s) => s.trim().replace(/^"(.*)"$/, '$1');
+
+// feed(line) returns [{type:'event',event}|{type:'batch-end'}]
+function createBatchParser() {
+  let inEvent = false, inParam = false, name = '', time = '', params = {}, raw = [], pName = '', pVal = '';
+  return {
+    feed(line) {
+      let m = null;
+      for (const re of SVC_LINES) { m = line.match(re); if (m) break; }
+      if (!m) return [];
+      const t = m[1], msg = m[2].trim();
+      if (msg === 'event {') { inEvent = true; inParam = false; name = ''; time = t; params = {}; raw = ['event {']; return []; }
+      if (inEvent) {
+        raw.push(msg);
+        if (msg === 'param {') { inParam = true; pName = ''; pVal = ''; }
+        else if (inParam) {
+          let x;
+          if ((x = msg.match(/^name:\s*(.+)$/))) pName = unq(x[1]);
+          else if ((x = msg.match(/^(?:string|int|double|float)_value:\s*(.+)$/))) pVal = unq(x[1]);
+          else if (msg === '}') { if (pName) params[pName] = pVal; inParam = false; }
+        } else if ((m = msg.match(/^name:\s*(.+)$/))) name = unq(m[1]);
+        else if (msg === '}') {
+          inEvent = false;
+          return [{ type: 'event', event: { time, kind: 'event', name, params, full: raw.join(' ') } }];
+        }
+        return [];
+      }
+      if (/End-of-batch/.test(msg)) return [{ type: 'batch-end', time: t }];
+      return [];
+    },
+  };
+}
+module.exports.createBatchParser = createBatchParser;

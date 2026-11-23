@@ -8,3 +8,13 @@ e = parseLine('11-23 10:00:00.1  1  1 V FA : Logging event: origin=app,name=logi
 assert.strictEqual(e.name, 'login'); assert.strictEqual(e.params.note, 'a, b=c'.split(', ')[0]);
 assert.strictEqual(parseLine('random line'), null);
 console.log('parser ok');
+const { createBatchParser } = require('../parser');
+const p = createBatchParser(); const out = [];
+const L = (m) => `11-23 10:00:01.500 V/FA-SVC(  999): ${m}`;
+['event {','  name: "screen_view"','  param {','    name: "firebase_screen"','    string_value: "Home"','  }','  param {','    name: "engagement_time_msec"','    int_value: 1200','  }','}','End-of-batch']
+  .forEach(l => out.push(...p.feed(L(l))));
+assert.strictEqual(out[0].event.name, 'screen_view');
+assert.strictEqual(out[0].event.params.firebase_screen, 'Home');
+assert.strictEqual(out[0].event.params.engagement_time_msec, '1200');
+assert.strictEqual(out[1].type, 'batch-end');
+console.log('batch parser ok');
