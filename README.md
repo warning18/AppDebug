@@ -41,3 +41,9 @@ automatically, otherwise `adb` from PATH (or the `ADB` environment variable).
 No traffic interception or certificates. It sets `debug.firebase.analytics.app=<package>` and
 verbose `FA` / `FA-SVC` log tags, then parses `adb logcat`. Stop resets the property.
 Android only.
+
+## Windows without admin rights (manual)
+- `platform-tools\` (adb) may sit in the AppDebug folder or in `runtime\`: it is found automatically.
+- Node without installing: put the Node `.msi` in the folder, then in cmd:
+  `msiexec /a node-v26.13.1-x64.msi /qn TARGETDIR="%CD%\node"` and double-click `start.bat`.
+  (If an installer is allowed, just install the MSI and double-click `start.bat`.)

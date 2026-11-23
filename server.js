@@ -8,9 +8,10 @@ const { execFile, spawn } = require('child_process');
 const { parseLine, createBatchParser } = require('./parser');
 
 const PORT = process.env.PORT || 4455;
-const LOCAL_ADB = path.join(__dirname, 'runtime', 'platform-tools', process.platform === 'win32' ? 'adb.exe' : 'adb');
-const ADB = process.env.ADB || (fs.existsSync(LOCAL_ADB) ? LOCAL_ADB : 'adb');
-const SESSIONS = process.env.SESSIONS_DIR || path.join(process.cwd(), 'sessions');
+const EXE = process.platform === 'win32' ? 'adb.exe' : 'adb';
+const LOCAL_ADB = [['runtime', 'platform-tools'], ['platform-tools'], ['platform-tools', 'platform-tools']]
+  .map(p => path.join(__dirname, ...p, EXE)).find(f => fs.existsSync(f));
+const ADB = process.env.ADB || LOCAL_ADB || 'adb';
 const clients = new Set();
 let logcat = null, session = null, seq = 0, msgs = [];
 let allEvents = [], pendingIds = [];
