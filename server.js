@@ -12,9 +12,10 @@ const EXE = process.platform === 'win32' ? 'adb.exe' : 'adb';
 const LOCAL_ADB = [['runtime', 'platform-tools'], ['platform-tools'], ['platform-tools', 'platform-tools']]
   .map(p => path.join(__dirname, ...p, EXE)).find(f => fs.existsSync(f));
 const ADB = process.env.ADB || LOCAL_ADB || 'adb';
+const SESSIONS = process.env.SESSIONS_DIR || path.join(process.cwd(), 'sessions');
 const clients = new Set();
 let logcat = null, session = null, seq = 0, msgs = [];
-let allEvents = [], pendingIds = [];
+let allEvents = [], pendingIds = [], epoch = 1, lastDir = '', lastError = '';
 
 const adb = (args, opts = {}) => new Promise((res, rej) =>
   execFile(ADB, args, { maxBuffer: 64 * 1024 * 1024, encoding: opts.binary ? 'buffer' : 'utf8', timeout: opts.timeout || 15000 },
@@ -57,7 +58,7 @@ async function onBatchEnd(time) {
   const evs = allEvents.filter(e => ids.includes(e.id));
   const base = `${time.replace(/[:.]/g, '-')}_batch_${evs.length}events`;
   const batch = { type: 'batch', id: base, time, eventIds: ids, shot: null, bounds: null };
-  emit({ ...batch }, false);   // immediate: client shows the batch, screenshot follows
+  msgs.push({ ...batch });   // client shows the batch now, screenshot follows
   try {
     const bounds = await appBounds(session.serial, session.pkg);
     if (bounds) {
@@ -68,7 +69,7 @@ async function onBatchEnd(time) {
       evs.forEach(e => { e.shot = rel; e.annotated = `screenshots/${base}_sidebyside.png`; });
     } else evs.forEach(e => { e.shot = 'SKIPPED (not in foreground)'; e.annotated = e.shot; });
   } catch { /* screenshot is best-effort */ }
-  msgs.push(batch); emit({ type: 'batch-update', batch }, false);
+  msgs.push({ type: 'batch-update', batch: { ...batch } });
   writeCsv();
 }
 
@@ -77,7 +78,7 @@ async function stop() {
   if (session) {
     writeCsv();
     await adb(['-s', session.serial, 'shell', 'setprop', 'debug.firebase.analytics.app', '.none.']).catch(() => {});
-    const dir = session.dir; session = null;
+    lastDir = session.dir; const dir = lastDir; session = null;
     emit({ type: 'status', running: false, dir }, false);
   } else emit({ type: 'status', running: false }, false);
 }
@@ -93,7 +94,7 @@ async function start(serial, pkg, mode) {
   const dir = path.join(SESSIONS, `QA_Run_${stamp}`);
   fs.mkdirSync(path.join(dir, 'screenshots'), { recursive: true });
   session = { serial, pkg, mode, dir };
-  msgs = []; allEvents = []; pendingIds = [];
+  msgs = []; allEvents = []; pendingIds = []; epoch++; lastError = ''; lastDir = dir;
   const parser = createBatchParser();
   const tags = mode === 'instant' ? ['FA:V', 'FA-SVC:S'] : ['FA-SVC:V'];
   logcat = spawn(ADB, ['-s', serial, 'logcat', '-v', 'time', '-T', '1', '-s', ...tags]);
@@ -106,7 +107,7 @@ async function start(serial, pkg, mode) {
       for (const r of parser.feed(l)) { if (r.type === 'event') push(r.event); else onBatchEnd(r.time); }
     }
   });
-  logcat.on('exit', () => { if (logcat) { logcat = null; writeCsv(); session = null; emit({ type: 'status', running: false, error: 'logcat stopped (device disconnected?)' }, false); } });
+  logcat.on('exit', () => { if (logcat) { logcat = null; writeCsv(); session = null; lastError = 'logcat stopped (device disconnected?)'; emit({ type: 'status', running: false, error: lastError }, false); } });
   emit({ type: 'status', running: true, serial, pkg, mode, dir }, false);
 }
 
@@ -134,7 +135,13 @@ const routes = {
   },
   'POST /api/start': async (req) => { const b = await body(req); await start(b.serial, b.pkg, b.mode === 'instant' ? 'instant' : 'batch'); return { ok: true, dir: session.dir }; },
   'POST /api/stop': async () => { await stop(); return { ok: true }; },
-  'POST /api/clear': async () => { msgs = []; allEvents = []; pendingIds = []; return { ok: true }; },
+  'POST /api/clear': async () => { msgs = []; allEvents = []; pendingIds = []; epoch++; return { ok: true }; },
+  'GET /api/poll': async (req, url) => {
+    let since = Number(url.searchParams.get('since')) || 0;
+    if (Number(url.searchParams.get('epoch')) !== epoch || since > msgs.length) since = 0;
+    return { epoch, next: msgs.length, msgs: msgs.slice(since),
+      status: { running: !!session, ...(session ? { serial: session.serial, pkg: session.pkg, mode: session.mode } : {}), dir: session ? session.dir : lastDir, error: lastError } };
+  },
 };
 
 const server = http.createServer(async (req, res) => {

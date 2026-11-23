@@ -68,7 +68,7 @@ async function devices(){try{const d=await api('devices');const ok=d.filter(x=>x
 async function pkgs(){serial=$('dev').value;if(!serial)return;try{const p=await api('packages?serial='+encodeURIComponent(serial));$('pkgs').innerHTML=p.map(x=>`<option value="${esc(x)}">`).join('');try{const l=localStorage.pkg;if(l&&!$('pkg').value)$('pkg').value=l}catch{}}catch(e){msg(e.message)}}
 $('dev').onchange=pkgs;$('rf').onclick=devices;
 $('go').onclick=async()=>{try{msg('');try{localStorage.pkg=$('pkg').value.trim()}catch{}
- evs=new Map();batches=[];pending=[];await api('start',{serial:$('dev').value,pkg:$('pkg').value.trim(),mode:$('mode').value})}catch(e){msg(e.message)}};
+ await api('start',{serial:$('dev').value,pkg:$('pkg').value.trim(),mode:$('mode').value})}catch(e){msg(e.message)}};
 $('stop').onclick=()=>api('stop',{});
 $('wifi').onclick=()=>$('dlg').showModal();
 $('pair').onclick=async()=>{try{$('dm').textContent=(await api('pair',{addr:$('pa').value,code:$('pc').value})).out}catch(e){$('dm').textContent=e.message}};
@@ -115,16 +115,20 @@ $('clr').onclick=()=>{evs=new Map();batches=[];pending=[];api('clear',{});view()
 const dl=(n,t,m)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:m}));a.download=n;a.click()};
 $('exj').onclick=()=>dl('events.json',JSON.stringify([...evs.values()],null,2),'application/json');
 $('exc').onclick=()=>{location.href='/api/csv'};
-// ---- stream
-const es=new EventSource('/api/stream');
-es.onmessage=m=>{const d=JSON.parse(m.data);
+// ---- stream (polling, works with both the Node and the PowerShell server)
+let epoch=0,since=0,lastSt='';
+function handle(d){
  if(d.type==='event'){if($('pause').checked)return;evs.set(d.event.id,d.event);if(mode==='batch')pending.push(d.event.id);view()}
  else if(d.type==='batch'||d.type==='batch-update'){const b=d.batch||d;const old=batches.find(x=>x.id===b.id);const ids=b.eventIds;
   pending=pending.filter(i=>!ids.includes(i));
-  if(old){Object.assign(old,{shot:b.shot,bounds:b.bounds});b.skipped=old.skipped}else batches.push(b);
+  if(old){Object.assign(old,{shot:b.shot,bounds:b.bounds})}else batches.push(b);
   const t=old||b;if(d.type==='batch-update'&&!b.shot)t.skipped='Skipped (app not in foreground)';
-  prepare(t);view()}
- else if(d.type==='status'){mode=d.mode||mode;if(d.mode)$('mode').value=d.mode;$('go').hidden=!!d.running;$('stop').hidden=!d.running;
-  if(d.dir){dir=d.dir;msg(d.running?'Saving to '+d.dir:'Saved in '+d.dir,true)}if(d.error)msg(d.error);view()}};
-devices();loop();view();
+  prepare(t);view()}}
+function status(d){const k=JSON.stringify(d);if(k===lastSt)return;lastSt=k;
+ mode=d.mode||mode;if(d.mode)$('mode').value=d.mode;$('go').hidden=!!d.running;$('stop').hidden=!d.running;
+ if(d.dir)msg(d.running?'Saving to '+d.dir:'Saved in '+d.dir,true);if(d.error)msg(d.error);view()}
+async function poll(){try{const r=await fetch(`/api/poll?since=${since}&epoch=${epoch}`);const j=await r.json();
+ if(j.epoch!==epoch){epoch=j.epoch;evs=new Map();batches=[];pending=[]}
+ since=j.next;j.msgs.forEach(handle);status(j.status)}catch{}setTimeout(poll,500)}
+devices();loop();view();poll();
 </script></body></html>

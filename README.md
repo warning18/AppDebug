@@ -8,6 +8,9 @@ mirror of the phone. A UI version of the `firebase_debug.ps1` QA script.
 - Android phone with Developer options; a staging/debug build using Firebase.
 
 ## Run
+**Windows, no Node.js at all (PowerShell only):** put `platform-tools\` next to the files and double-click
+`AppDebug.bat` (runs `AppDebug.ps1`, same web page, same features, no install, no admin rights).
+
 **Windows, nothing installed (recommended for work PCs):**
 1. Download the repo ZIP and unzip it to any folder.
 2. Double-click `setup.bat` once: downloads portable Node.js and adb into `runtime\` (no admin rights).
