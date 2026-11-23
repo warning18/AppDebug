@@ -4,14 +4,20 @@ Live, QA-friendly view of the Firebase Analytics events fired by an Android app,
 mirror of the phone. A UI version of the `firebase_debug.ps1` QA script.
 
 ## Requirements
-- Node 18+ and `adb` (Android platform-tools) on your computer.
+- Windows/macOS/Linux. Node 18+ and `adb`, either installed or fetched by `setup.bat` into the folder.
 - Android phone with Developer options; a staging/debug build using Firebase.
 
 ## Run
-```
-node server.js        # then open http://localhost:4455
-```
-No `npm install`. Everything stays on your computer.
+**Windows, nothing installed (recommended for work PCs):**
+1. Download the repo ZIP and unzip it to any folder.
+2. Double-click `setup.bat` once: downloads portable Node.js and adb into `runtime\` (no admin rights).
+   If downloads are blocked on that PC, run it on another PC and copy the whole folder over.
+3. Double-click `start.bat`: opens http://localhost:4455.
+
+**Any OS with Node 18+ and adb installed:** `node server.js`, then open http://localhost:4455.
+
+No `npm install`. Everything stays on your computer. If `runtime\platform-tools\adb.exe` exists it is used
+automatically, otherwise `adb` from PATH (or the `ADB` environment variable).
 
 ## Use
 1. Connect by USB, or click **Wi-Fi…** (Wireless debugging: pair, then connect).
