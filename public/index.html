@@ -25,7 +25,7 @@ table{border-collapse:collapse;margin:3px 0 0 14px}td{padding:1px 14px 1px 0;fon
 dialog{border:1px solid var(--bd);border-radius:10px;background:var(--pn);color:var(--fg);max-width:480px}
 #zoom{max-width:96vw;max-height:96vh;padding:6px}#zoom img{max-width:92vw;max-height:90vh}
 small{color:var(--mut)}#msg{color:#dc2626}label{display:flex;gap:4px;align-items:center;white-space:nowrap}
-@media(max-width:800px){main{flex-direction:column}#phone{width:100%;border:0}.b{flex-direction:column}.shot{flex:none;max-width:220px}}
+@media(max-width:800px){main{flex-direction:column;overflow:auto}#phone{width:100%;border:0;border-bottom:1px solid var(--bd);padding:8px}#phone img{max-height:38vh}#ev{min-height:60vh}.b{flex-direction:column}.shot{flex:none;max-width:220px}header{padding:8px}header input,header select{flex:1 1 140px}#tools input[type=text],#tools input:not([type]){flex:1 1 140px}}
 </style></head><body>
 <header>
  <select id="dev"></select><button id="rf" title="Refresh devices">⟳</button>
@@ -42,6 +42,7 @@ small{color:var(--mut)}#msg{color:#dc2626}label{display:flex;gap:4px;align-items
    <label><input type="checkbox" id="hideSys"> hide system params</label>
    <label><input type="checkbox" id="flat"> flat list</label>
    <label><input type="checkbox" id="pause"> pause</label>
+   <label><input type="checkbox" id="mir" checked> mirror</label>
    <span style="flex:1"></span><small id="cnt">0 events</small>
    <button id="clr">Clear</button><button id="exc">CSV</button><button id="exj">JSON</button></div>
   <div id="list"></div>
@@ -74,7 +75,7 @@ $('wifi').onclick=()=>$('dlg').showModal();
 $('pair').onclick=async()=>{try{$('dm').textContent=(await api('pair',{addr:$('pa').value,code:$('pc').value})).out}catch(e){$('dm').textContent=e.message}};
 $('conn').onclick=async()=>{try{$('dm').textContent=(await api('connect',{addr:$('ca').value})).out;devices()}catch(e){$('dm').textContent=e.message}};
 // ---- live mirror
-async function loop(){const s=$('dev').value;if(s){const img=$('scr');const u=await new Promise(r=>{const i=new Image();i.onload=()=>r(i.src);i.onerror=()=>r(null);i.src='/api/screen?serial='+encodeURIComponent(s)+'&t='+Date.now()});
+async function loop(){const s=$('mir').checked?$('dev').value:'';if(s){const img=$('scr');const u=await new Promise(r=>{const i=new Image();i.onload=()=>r(i.src);i.onerror=()=>r(null);i.src='/api/screen?serial='+encodeURIComponent(s)+'&t='+Date.now()});
  if(u){img.src=u;img.hidden=false;$('hint').hidden=true}}setTimeout(loop,s?250:1500)}
 // ---- screenshots: crop to app window, compose side-by-side
 const loadImg=u=>new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=u});
@@ -111,6 +112,8 @@ function view(){const q=$('q').value.toLowerCase(),hide=$('hideSys').checked,fla
 $('list').onclick=e=>{const i=e.target.closest('img[data-b]');if(i){const b=batches.find(x=>x.id===i.dataset.b);if(b&&b.crop){$('zi').src=sideBySide(b).toDataURL();$('zoom').showModal()}}
  const d=e.target.closest('button[data-dl]');if(d){const b=batches.find(x=>x.id===d.dataset.dl);const a=document.createElement('a');a.href=sideBySide(b).toDataURL();a.download=b.id+'_sidebyside.png';a.click()}};
 ['q','hideSys','flat'].forEach(i=>$(i).oninput=view);
+$('mir').checked=!matchMedia('(max-width:800px)').matches;
+const setMir=()=>{$('phone').style.display=$('mir').checked?'':'none'};$('mir').onchange=setMir;setMir();
 $('clr').onclick=()=>{evs=new Map();batches=[];pending=[];api('clear',{});view()};
 const dl=(n,t,m)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:m}));a.download=n;a.click()};
 $('exj').onclick=()=>dl('events.json',JSON.stringify([...evs.values()],null,2),'application/json');

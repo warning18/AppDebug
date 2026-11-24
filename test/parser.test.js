@@ -18,3 +18,27 @@ assert.strictEqual(out[0].event.params.firebase_screen, 'Home');
 assert.strictEqual(out[0].event.params.engagement_time_msec, '1200');
 assert.strictEqual(out[1].type, 'batch-end');
 console.log('batch parser ok');
+
+// ---- more samples
+{
+  const p2 = createBatchParser(); const o = [];
+  const T = (m) => `11-23 10:00:02.250  1234  1234 V FA-SVC : ${m}`;           // threadtime
+  ['event {','name: "purchase"','param {','name: "value"','double_value: 12.5','}','param {','name: "item_name"','string_value: "Blue shirt: size M, \\"slim\\""','}','}','End-of-batch']
+    .forEach(l => o.push(...p2.feed(T(l))));
+  assert.strictEqual(o[0].event.name, 'purchase');
+  assert.strictEqual(o[0].event.params.value, '12.5');
+  assert.strictEqual(o[0].event.params.item_name, 'Blue shirt: size M, \\"slim\\"');
+  assert.strictEqual(o[1].type, 'batch-end');
+  // two events in one batch, then lines from other tags are ignored
+  const p3 = createBatchParser(); const r = [];
+  const L2 = (m) => `11-23 10:00:03.000 V/FA-SVC(  1): ${m}`;
+  ['event {','name: "a"','}','event {','name: "b"','}','Uploading data. app: x','End-of-batch'].forEach(l => r.push(...p3.feed(L2(l))));
+  assert.deepStrictEqual(r.filter(x => x.type === 'event').map(x => x.event.name), ['a', 'b']);
+  assert.strictEqual(r.filter(x => x.type === 'batch-end').length, 1);
+  assert.deepStrictEqual(p3.feed('11-23 10:00:03.000 V/OtherTag(  1): event {'), []);
+  const e = parseLine('11-23 10:00:00.1 V/FA( 99): Logging event (FE): select_content(_sc), Bundle[{}]');
+  assert.strictEqual(e.name, 'select_content'); assert.deepStrictEqual(e.params, {});
+  const u = parseLine('11-23 10:00:00.1 V/FA( 99): Setting user property (FE): tier(_tr), gold');
+  assert.strictEqual(u.kind, 'user_property'); assert.strictEqual(u.params.value, 'gold');
+  console.log('extra samples ok');
+}

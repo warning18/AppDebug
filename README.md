@@ -50,3 +50,14 @@ Android only.
 - Node without installing: put the Node `.msi` in the folder, then in cmd:
   `msiexec /a node-v26.13.1-x64.msi /qn TARGETDIR="%CD%\node"` and double-click `start.bat`.
   (If an installer is allowed, just install the MSI and double-click `start.bat`.)
+
+## Phone / tablet viewer (Wi-Fi, Node version only)
+`start-lan.bat` (or `LAN=1 node server.js`) also listens on your network and prints a link with a
+6-digit PIN, e.g. `http://192.168.1.20:4455/?pin=123456`. Open it once on the phone (same Wi-Fi);
+it is remembered with a cookie. This computer never needs the PIN. The mirror panel can be switched
+off with the "mirror" checkbox (off by default on phone screens). Anyone with the PIN can control adb
+from your computer, so stop the server when done. Not available in the PowerShell edition (Windows
+only allows a network listener with admin rights).
+
+## Tests
+`node test/parser.test.js`. First-run checklist for the PowerShell edition: `docs/TESTING-POWERSHELL.md`.

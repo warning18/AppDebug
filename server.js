@@ -4,6 +4,8 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+const crypto = require('crypto');
 const { execFile, spawn } = require('child_process');
 const { parseLine, createBatchParser } = require('./parser');
 
@@ -13,6 +15,31 @@ const LOCAL_ADB = [['runtime', 'platform-tools'], ['platform-tools'], ['platform
   .map(p => path.join(__dirname, ...p, EXE)).find(f => fs.existsSync(f));
 const ADB = process.env.ADB || LOCAL_ADB || 'adb';
 const SESSIONS = process.env.SESSIONS_DIR || path.join(process.cwd(), 'sessions');
+// LAN mode (opt-in): LAN=1 node server.js  or  node server.js --lan
+// Other devices on the Wi-Fi (phone, tablet) must open /?pin=<PIN> once; this computer never needs it.
+const LAN = process.env.LAN === '1' || process.argv.includes('--lan');
+const PIN = LAN ? String(crypto.randomInt(100000, 1000000)) : '';
+const TOKEN = LAN ? crypto.randomBytes(16).toString('hex') : '';
+let fails = 0, lockedUntil = 0;
+const isLoopback = (ip) => ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+const LOGIN_PAGE = '<!doctype html><meta name=viewport content="width=device-width,initial-scale=1"><title>PIN</title><body style="font:16px system-ui;padding:24px"><h3>Firebase Events Live</h3><form><input name=pin inputmode=numeric autofocus placeholder="PIN shown on the computer" style="font:inherit;padding:8px"> <button style="font:inherit;padding:8px">Open</button></form>';
+// true = allowed, false = refused (response sent), handled when it redirects after a correct PIN
+function checkAuth(req, url, res) {
+  if (!LAN || isLoopback(req.socket.remoteAddress)) return true;
+  const c = (req.headers.cookie || '').split(/;\s*/).find(x => x.startsWith('afl='));
+  if (c && c.slice(4) === TOKEN) return true;
+  if (url.pathname === '/' && url.searchParams.has('pin')) {
+    if (Date.now() < lockedUntil) { res.writeHead(429); res.end('Too many attempts, wait a minute'); return false; }
+    if (url.searchParams.get('pin') === PIN) {
+      fails = 0;
+      res.writeHead(302, { 'set-cookie': `afl=${TOKEN}; HttpOnly; SameSite=Strict; Path=/`, location: '/' }); res.end(); return false;
+    }
+    if (++fails >= 10) { lockedUntil = Date.now() + 60000; fails = 0; }
+  }
+  if (url.pathname === '/') { res.writeHead(401, { 'content-type': 'text/html' }); res.end(LOGIN_PAGE); }
+  else { res.writeHead(401); res.end('PIN required'); }
+  return false;
+}
 const clients = new Set();
 let logcat = null, session = null, seq = 0, msgs = [];
 let allEvents = [], pendingIds = [], epoch = 1, lastDir = '', lastError = '';
@@ -147,6 +174,7 @@ const routes = {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   try {
+    if (!checkAuth(req, url, res)) return;
     if (req.method === 'GET' && url.pathname === '/api/stream') {
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
       clients.add(res);
@@ -184,4 +212,12 @@ const server = http.createServer(async (req, res) => {
 });
 
 process.on('SIGINT', async () => { await stop(); process.exit(0); });
-server.listen(PORT, '127.0.0.1', () => console.log(`Firebase Events Live: http://localhost:${PORT}\nSessions saved in: ${SESSIONS}`));
+server.listen(PORT, LAN ? '0.0.0.0' : '127.0.0.1', () => {
+  console.log(`Firebase Events Live: http://localhost:${PORT}\nSessions saved in: ${SESSIONS}`);
+  if (LAN) {
+    const ips = Object.values(os.networkInterfaces()).flat().filter(i => i && i.family === 'IPv4' && !i.internal).map(i => i.address);
+    console.log('\nLAN mode ON. On your phone/tablet (same Wi-Fi) open:');
+    for (const ip of ips) console.log(`  http://${ip}:${PORT}/?pin=${PIN}`);
+    console.log('Anyone with this PIN can control adb from this computer. Stop the server when done.');
+  }
+});
